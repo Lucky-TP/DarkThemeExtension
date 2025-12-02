@@ -1,15 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "My Personal Dark Mode",
+  "name": "Dark Theme",
   "version": "1.0",
-  "description": "A private, DIY dark mode for any website with auto-whitelist feature.",
-  "permissions": [
-    "storage",
-    "scripting"
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "description": "Apply dark mode to any website with automatic whitelist support.",
+  "permissions": ["storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
