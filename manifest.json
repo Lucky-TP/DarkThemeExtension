@@ -3,8 +3,13 @@
   "name": "My Personal Dark Mode",
   "version": "1.0",
   "description": "A private, DIY dark mode for any website with auto-whitelist feature.",
-  "permissions": ["activeTab", "scripting", "storage", "tabs", "webNavigation"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

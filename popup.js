@@ -160,22 +160,57 @@ function removeDarkMode() {
   }
 }
 
-// Toggle dark mode
+// Toggle dark mode using content script injection
 async function toggleDarkMode() {
   if (!currentTabInfo) return;
 
   const isActive = await isDarkModeActive(currentTabInfo.id);
 
   if (isActive) {
-    chrome.scripting.executeScript({
+    // Inject content.js with remove function
+    await chrome.scripting.executeScript({
       target: { tabId: currentTabInfo.id },
-      func: removeDarkMode,
+      func: () => {
+        const styleId = "my-personal-dark-mode-style";
+        const existingStyle = document.getElementById(styleId);
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      },
     });
     updateToggleDisplay(false);
   } else {
-    chrome.scripting.executeScript({
+    // Inject content.js with apply function (with animation)
+    await chrome.scripting.executeScript({
       target: { tabId: currentTabInfo.id },
-      func: applyDarkMode,
+      func: () => {
+        const styleId = "my-personal-dark-mode-style";
+        const existingStyle = document.getElementById(styleId);
+
+        if (!existingStyle) {
+          const style = document.createElement("style");
+          style.id = styleId;
+          style.textContent = `
+            html {
+              /* Invert colors (white -> black) and rotate hue so blue doesn't turn orange */
+              filter: invert(1) hue-rotate(180deg) !important;
+              /* Smooth transition for manual toggle */
+              transition: filter 0.3s ease !important;
+            }
+
+            /* Re-invert media so images/videos look normal, not like ghosts */
+            img, video, iframe, canvas, svg {
+              filter: invert(1) hue-rotate(180deg) !important;
+            }
+
+            /* Optional: Fix for background images that might look weird */
+            div[style*="background-image"] {
+               filter: invert(1) hue-rotate(180deg) !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+      },
     });
     updateToggleDisplay(true);
   }
@@ -237,24 +272,30 @@ async function autoApplyDarkMode() {
 
 // Initialize popup
 async function initializePopup() {
-  // Get current tab
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  currentTabInfo = tab;
+  try {
+    // Get current tab - will work due to host_permissions: ["<all_urls>"]
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    currentTabInfo = tab;
 
-  if (currentTabInfo) {
-    // Update current domain display
-    await updateCurrentDomainDisplay();
+    if (currentTabInfo) {
+      // Update current domain display
+      await updateCurrentDomainDisplay();
 
-    // Check if dark mode is active
-    const isActive = await isDarkModeActive(currentTabInfo.id);
-    updateToggleDisplay(isActive);
+      // Check if dark mode is active
+      const isActive = await isDarkModeActive(currentTabInfo.id);
+      updateToggleDisplay(isActive);
 
-    // Auto-apply dark mode if domain is whitelisted
-    await autoApplyDarkMode();
+      // Auto-apply dark mode if domain is whitelisted
+      await autoApplyDarkMode();
+    }
+
+    // Update whitelist display
+    updateWhitelistDisplay();
+  } catch (error) {
+    console.log('Could not get current tab:', error);
+    // Update whitelist display anyway
+    updateWhitelistDisplay();
   }
-
-  // Update whitelist display
-  updateWhitelistDisplay();
 }
 
 // Event listeners
